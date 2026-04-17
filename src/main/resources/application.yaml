@@ -1,3 +1,14 @@
 spring:
   application:
     name: fit-tracker-middleware
+  r2dbc:
+    url: r2dbc:${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+  flyway:
+    url: jdbc:${DATASOURCE_URL}
+    user: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+    locations:
+      - classpath:db/migration/common
+      - classpath:db/migration/${spring.profiles.active}
