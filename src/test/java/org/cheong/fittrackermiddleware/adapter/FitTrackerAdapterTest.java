@@ -13,19 +13,26 @@ import org.cheong.fittrackermiddleware.factory.FitTrackerPropertiesFactory;
 import org.cheong.fittrackermiddleware.factory.WebClientTestFactory;
 import org.cheong.fittrackermiddleware.properties.FitTrackerProperties;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
-
 import java.io.IOException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {ObjectMapper.class})
 public class FitTrackerAdapterTest {
 
     private FitTrackerAdapter fitTrackerAdapter;
     private static MockWebServer mockWebServer;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeAll
@@ -41,7 +48,6 @@ public class FitTrackerAdapterTest {
 
     @BeforeEach
     void init() {
-        objectMapper = new ObjectMapper();
         FitTrackerProperties properties = FitTrackerPropertiesFactory.createFitTrackerProperties(mockWebServer.url("/").toString());
         WebClient webClient = WebClientTestFactory.createWebClient(properties);
         fitTrackerAdapter = new FitTrackerAdapter(webClient, properties);
@@ -72,7 +78,7 @@ public class FitTrackerAdapterTest {
                 .setBody(objectMapper.writeValueAsString(new ErrorMessage("Server is not up"))));
 
         StepVerifier.create(fitTrackerAdapter.pingHealth())
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -89,7 +95,7 @@ public class FitTrackerAdapterTest {
                 .setBody(objectMapper.writeValueAsString(new ErrorMessage("Server is not up"))));
 
         StepVerifier.create(fitTrackerAdapter.pingHealth())
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -127,7 +133,7 @@ public class FitTrackerAdapterTest {
         );
 
         StepVerifier.create(fitTrackerAdapter.getToken())
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -146,7 +152,7 @@ public class FitTrackerAdapterTest {
         );
 
         StepVerifier.create(fitTrackerAdapter.getToken())
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();

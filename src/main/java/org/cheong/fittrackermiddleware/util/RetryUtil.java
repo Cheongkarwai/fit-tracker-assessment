@@ -4,8 +4,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakeException;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.service.TokenService;
 import org.springframework.http.HttpStatus;
-import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
+import java.time.Duration;
 
 @Slf4j
 public class RetryUtil {
@@ -16,16 +16,18 @@ public class RetryUtil {
      * @return
      */
     public static Retry retryOnUnauthorized(TokenService tokenService) {
-        return Retry.from(retrySignal -> retrySignal
-                .flatMap(signal -> {
-                    if (signal.failure() instanceof WebSocketClientHandshakeException webSocketClientHandshakeException) {
-                        if (webSocketClientHandshakeException.getMessage().contains(String.valueOf(HttpStatus.UNAUTHORIZED.value()))) {
-                            log.error("Unauthorized. Evicting access token");
-                            tokenService.evictAccessToken();
-                            return Mono.just(signal);
-                        }
-                    }
-                    return Mono.error(signal.failure());
-                }));
+        return Retry.backoff(100, Duration.ofMinutes(1))
+                .filter(throwable -> throwable instanceof WebSocketClientHandshakeException ws
+                        && ws.getMessage().contains(String.valueOf(HttpStatus.UNAUTHORIZED.value())))
+                .doBeforeRetry(retrySignal -> {
+                    log.warn("Unauthorized. Evicting access token before retry #{}", retrySignal.totalRetries());
+                    tokenService.evictAccessToken();
+                })
+                .doAfterRetry(retrySignal -> log.error("Retrying after {} seconds", retrySignal.totalRetries()))
+                .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
+                    log.error("Retry exhausted, error={}", retrySignal.failure().getMessage(), retrySignal.failure());
+                    return retrySignal.failure();
+                });
     }
+
 }
