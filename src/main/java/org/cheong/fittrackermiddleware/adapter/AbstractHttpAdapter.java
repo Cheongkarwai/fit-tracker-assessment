@@ -1,9 +1,8 @@
 package org.cheong.fittrackermiddleware.adapter;
 
-import org.cheong.fittrackermiddleware.exception.ApiException;
-import org.cheong.fittrackermiddleware.dto.ErrorMessage;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,13 +12,13 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.function.Function;
 
-public abstract class AbstractAdapter {
+public abstract class AbstractHttpAdapter {
 
     protected WebClient webClient;
     protected Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction4xx;
     protected Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction5xx;
 
-    public AbstractAdapter(WebClient webClient, Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction4xx, Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction5xx) {
+    public AbstractHttpAdapter(WebClient webClient, Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction4xx, Function<ClientResponse, Mono<? extends Throwable>> errorHandlingFunction5xx) {
         this.webClient = webClient;
         this.errorHandlingFunction4xx = errorHandlingFunction4xx;
         this.errorHandlingFunction5xx = errorHandlingFunction5xx;
@@ -71,10 +70,13 @@ public abstract class AbstractAdapter {
                 .method(httpMethod)
                 .uri(uri, uriBuilder -> {
                     uriBuilder.queryParams(queryParams);
+                    if (CollectionUtils.isEmpty(pathVariables)) {
+                        return uriBuilder.build();
+                    }
                     return uriBuilder.build(pathVariables.toArray());
                 });
 
-        if(body != null) {
+        if (body != null) {
             return requestSpec.bodyValue(body);
         }
 

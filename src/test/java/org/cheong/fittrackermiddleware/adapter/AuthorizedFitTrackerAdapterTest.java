@@ -15,15 +15,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
-
 import java.io.IOException;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class FitTrackerAuthorizedAdapterTest {
+public class AuthorizedFitTrackerAdapterTest {
 
-    private FitTrackerAuthorizedAdapter fitTrackerAuthorizedAdapter;
+    private AuthorizedFitTrackerAdapter authorizedFitTrackerAdapter;
     private static MockWebServer mockWebServer;
     private ObjectMapper objectMapper;
 
@@ -43,7 +41,7 @@ public class FitTrackerAuthorizedAdapterTest {
         objectMapper = new ObjectMapper();
         FitTrackerProperties properties = FitTrackerPropertiesFactory.createFitTrackerProperties(mockWebServer.url("/").toString());
         WebClient webClient = WebClientTestFactory.createWebClient(properties);
-        fitTrackerAuthorizedAdapter = new FitTrackerAuthorizedAdapter(webClient);
+        authorizedFitTrackerAdapter = new AuthorizedFitTrackerAdapter(webClient);
     }
 
     @Test
@@ -55,7 +53,7 @@ public class FitTrackerAuthorizedAdapterTest {
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .setBody(objectMapper.writeValueAsString(userResponse)));
 
-        StepVerifier.create(fitTrackerAuthorizedAdapter.getUser("123"))
+        StepVerifier.create(authorizedFitTrackerAdapter.getUser("123"))
                 .assertNext(response -> assertEquals(userResponse.id(), response.id()))
                 .verifyComplete();
 
@@ -73,7 +71,7 @@ public class FitTrackerAuthorizedAdapterTest {
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .setBody(objectMapper.writeValueAsString(apiException)));
 
-        StepVerifier.create(fitTrackerAuthorizedAdapter.getUser("123"))
+        StepVerifier.create(authorizedFitTrackerAdapter.getUser("123"))
                 .expectErrorMatches(throwable -> throwable instanceof ApiException)
                 .verify();
 
@@ -91,7 +89,7 @@ public class FitTrackerAuthorizedAdapterTest {
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .setBody(objectMapper.writeValueAsString(apiException)));
 
-        StepVerifier.create(fitTrackerAuthorizedAdapter.getUser("123"))
+        StepVerifier.create(authorizedFitTrackerAdapter.getUser("123"))
                 .expectErrorMatches(throwable -> throwable instanceof ApiException)
                 .verify();
 

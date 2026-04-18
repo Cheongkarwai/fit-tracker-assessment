@@ -26,7 +26,8 @@ public class TokenService {
 
     @Cacheable("access_token")
     public Mono<TokenResponse> getAccessToken(){
-        return fitTrackerAdapter.getToken();
+        return fitTrackerAdapter.getToken()
+                .doOnNext(tokenResponse -> log.debug("Get access token={}", tokenResponse.accessToken()));
     }
 
     public void evictAccessToken(){

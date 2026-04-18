@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.function.Function;
 
 @Component
-public class FitTrackerAdapter extends AbstractAdapter {
+public class FitTrackerAdapter extends AbstractHttpAdapter {
 
     private final FitTrackerProperties properties;
 
