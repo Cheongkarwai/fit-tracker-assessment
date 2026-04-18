@@ -11,18 +11,26 @@ import org.cheong.fittrackermiddleware.factory.FitTrackerPropertiesFactory;
 import org.cheong.fittrackermiddleware.factory.WebClientTestFactory;
 import org.cheong.fittrackermiddleware.properties.FitTrackerProperties;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 import java.io.IOException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {ObjectMapper.class})
 public class AuthorizedFitTrackerAdapterTest {
 
     private AuthorizedFitTrackerAdapter authorizedFitTrackerAdapter;
     private static MockWebServer mockWebServer;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeAll
@@ -38,7 +46,6 @@ public class AuthorizedFitTrackerAdapterTest {
 
     @BeforeEach
     void init() {
-        objectMapper = new ObjectMapper();
         FitTrackerProperties properties = FitTrackerPropertiesFactory.createFitTrackerProperties(mockWebServer.url("/").toString());
         WebClient webClient = WebClientTestFactory.createWebClient(properties);
         authorizedFitTrackerAdapter = new AuthorizedFitTrackerAdapter(webClient);
@@ -72,7 +79,7 @@ public class AuthorizedFitTrackerAdapterTest {
                 .setBody(objectMapper.writeValueAsString(apiException)));
 
         StepVerifier.create(authorizedFitTrackerAdapter.getUser("123"))
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -90,7 +97,7 @@ public class AuthorizedFitTrackerAdapterTest {
                 .setBody(objectMapper.writeValueAsString(apiException)));
 
         StepVerifier.create(authorizedFitTrackerAdapter.getUser("123"))
-                .expectErrorMatches(throwable -> throwable instanceof ApiException)
+                .expectError(ApiException.class)
                 .verify();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest();

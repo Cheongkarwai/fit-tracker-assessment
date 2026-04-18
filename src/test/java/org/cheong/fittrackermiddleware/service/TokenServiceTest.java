@@ -1,7 +1,7 @@
 package org.cheong.fittrackermiddleware.service;
 
 import org.cheong.fittrackermiddleware.adapter.FitTrackerAdapter;
-import org.cheong.fittrackermiddleware.configuration.CacheConfiguration;
+import org.cheong.fittrackermiddleware.configuration.CacheConfigurationTest;
 import org.cheong.fittrackermiddleware.dto.TokenResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,7 @@ import reactor.test.StepVerifier;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CacheConfiguration.class, TokenService.class})
+@ContextConfiguration(classes = {CacheConfigurationTest.class, TokenService.class})
 public class TokenServiceTest {
 
     @Autowired

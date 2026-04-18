@@ -28,7 +28,7 @@ public class WebSocketHelper {
         this.tokenService = tokenService;
     }
 
-    protected final Flux<String> receive(URI path) {
+    public final Flux<String> receive(URI path) {
         Sinks.Many<String> sinks = Sinks.many().multicast().onBackpressureBuffer();
 
         tokenService.getAccessToken()

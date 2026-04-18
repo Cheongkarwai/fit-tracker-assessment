@@ -12,9 +12,17 @@ spring:
     locations:
       - classpath:db/migration/common
       - classpath:db/migration/${spring.profiles.active}
+  data:
+    redis:
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
 
 fit-tracker:
   baseUrl: ${FIT_TRACKER_BASE_URL}
   clientId: ${FIT_TRACKER_CLIENT_ID}
   clientSecret: ${FIT_TRACKER_CLIENT_SECRET}
   version: ${FIT_TRACKER_API_VERSION}
+server:
+  port: 0
