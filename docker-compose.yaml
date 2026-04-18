@@ -4,7 +4,7 @@ services:
     container_name: postgres_db
     restart: always
     env_file:
-      - ./env.db
+      - env.test
     ports:
       - "5432:5432"
     volumes:
@@ -14,7 +14,9 @@ services:
     restart: always
     ports:
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: /bin/sh -c redis-server --save 20 1 --loglevel warning --requirepass $$REDIS_PASSWORD
+    env_file:
+      - env.test
     volumes:
       - cache_data:/var/lib/redis/data
 
