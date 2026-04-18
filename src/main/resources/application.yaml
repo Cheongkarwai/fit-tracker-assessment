@@ -12,3 +12,9 @@ spring:
     locations:
       - classpath:db/migration/common
       - classpath:db/migration/${spring.profiles.active}
+
+fit-tracker:
+  baseUrl: ${FIT_TRACKER_BASE_URL}
+  clientId: ${FIT_TRACKER_CLIENT_ID}
+  clientSecret: ${FIT_TRACKER_CLIENT_SECRET}
+  version: ${FIT_TRACKER_API_VERSION}
