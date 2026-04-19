@@ -20,7 +20,7 @@
 
 3. Run the application
 
-``./gradlew bootRun --args="--spring.profiles.active=dev --server.port=9090"``
+``./gradlew bootRun --args="--spring.profiles.active=dev --server.port=8080"``
 
 4. Access the application
 
