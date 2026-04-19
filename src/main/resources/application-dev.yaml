@@ -8,7 +8,7 @@ logging:
     io.github.resilience4j: DEBUG
 cron:
   expression:
-    create-user-metadata-partition: '0 0 0 1 * *'
+    create-user-metadata-partition: '* * * * * *'
     ping-fit-tracker-health: '*/30 * * * * *'
 
 server:
