@@ -1,5 +1,6 @@
 package org.cheong.fittrackermiddleware.service;
 
+import io.r2dbc.spi.R2dbcException;
 import org.cheong.fittrackermiddleware.mapper.UserFitnessMapper;
 import org.cheong.fittrackermiddleware.mapper.UserFitnessMapperImpl;
 import org.cheong.fittrackermiddleware.mapper.UserMapper;
@@ -94,11 +95,16 @@ public class UserFitnessServiceTest {
     @DisplayName("Save user fitness should not save user fitness into database when error occurs")
     void saveUserFitness_shouldNotSaveUserFitnessIntoDatabase_whenErrorOccurs() {
         when(userService.checkIfUserExists(any())).then(answer -> Mono.just(false));
-        when(userService.saveUser(any())).thenReturn(Mono.error(new RuntimeException("Database error")));
+        when(userService.saveUser(any())).thenReturn(Mono.error(new R2dbcException(){
+            @Override
+            public String getMessage() {
+                return "Database error";
+            }
+        }));
         when(userFitnessMetadataRepository.save(any())).then(answer -> Mono.just(answer.getArgument(0)));
 
         StepVerifier.create(userFitnessService.saveUserFitnessRealTimeMetadata(BASE64_ENCODED_STRING_FITNESS_DATA))
-                .expectError(RuntimeException.class)
+                .expectError(R2dbcException.class)
                 .verify();
 
         verify(userService, times(1)).saveUser(any());

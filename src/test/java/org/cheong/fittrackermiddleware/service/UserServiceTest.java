@@ -1,5 +1,6 @@
 package org.cheong.fittrackermiddleware.service;
 
+import io.r2dbc.spi.R2dbcException;
 import org.cheong.fittrackermiddleware.model.User;
 import org.cheong.fittrackermiddleware.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -46,17 +47,22 @@ public class UserServiceTest {
     @Test
     @DisplayName("Check user exists, throw error when database operation fails")
     void checkUserIfExists_ThrowError_WhenDatabaseOperationFails() {
-        when(userRepository.existsById(anyString())).thenReturn(Mono.error(new RuntimeException("Database error")));
+        when(userRepository.existsById(anyString())).thenReturn(Mono.error(new R2dbcException(){
+            @Override
+            public String getMessage() {
+                return "Database error";
+            }
+        }));
 
         StepVerifier.create(userService.checkIfUserExists("123"))
-                .expectError(RuntimeException.class)
+                .expectError(R2dbcException.class)
                 .verify();
     }
 
     @Test
     @DisplayName("Save user, return user when user saved successfully")
     void saveUser_ReturnUser_WhenUserSavedSuccessfully() {
-        User user = new User("123");
+        User user = new User("123", true);
         when(userRepository.save(user)).thenReturn(Mono.just(user));
 
         StepVerifier.create(userService.saveUser(user))
@@ -67,11 +73,16 @@ public class UserServiceTest {
     @Test
     @DisplayName("Save user, throw error when database operation fails")
     void saveUser_ThrowError_WhenDatabaseOperationFails() {
-        User user = new User("123");
-        when(userRepository.save(user)).thenReturn(Mono.error(new RuntimeException("Database error")));
+        User user = new User("123", true);
+        when(userRepository.save(user)).thenReturn(Mono.error(new R2dbcException(){
+            @Override
+            public String getMessage() {
+                return "Database error";
+            }
+        }));
 
         StepVerifier.create(userService.saveUser(user))
-                .expectError(RuntimeException.class)
+                .expectError(R2dbcException.class)
                 .verify();
     }
 }

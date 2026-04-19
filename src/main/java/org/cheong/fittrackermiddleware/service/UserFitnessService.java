@@ -1,15 +1,19 @@
 package org.cheong.fittrackermiddleware.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer;
+import org.cheong.fittrackermiddleware.dto.UserFitnessDTO;
+import org.cheong.fittrackermiddleware.exception.UserNotFoundException;
 import org.cheong.fittrackermiddleware.mapper.UserFitnessMapper;
 import org.cheong.fittrackermiddleware.mapper.UserMapper;
 import org.cheong.fittrackermiddleware.model.UserFitnessMetadata;
 import org.cheong.fittrackermiddleware.repository.UserFitnessMetadataRepository;
-import org.cheong.fittrackermiddleware.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Service
 @Slf4j
@@ -24,7 +28,7 @@ public class UserFitnessService {
     public UserFitnessService(UserFitnessMapper userFitnessMapper,
                               UserMapper userMapper,
                               ObjectMapper objectMapper, UserFitnessMetadataRepository userFitnessMetadataRepository,
-                              UserService userService){
+                              UserService userService) {
         this.userFitnessMapper = userFitnessMapper;
         this.userMapper = userMapper;
         this.objectMapper = objectMapper;
@@ -32,15 +36,25 @@ public class UserFitnessService {
         this.userService = userService;
     }
 
-    @Transactional
-    public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadata(String base64EncodedStringFitnessData){
+    @Transactional(timeout = 30)
+    public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadata(String base64EncodedStringFitnessData) {
         return Mono.just(base64EncodedStringFitnessData)
-                .map(fitnessDataString-> userFitnessMapper.mapBase64EncodedStringToUserTrace(fitnessDataString, objectMapper))
+                .map(fitnessDataString -> userFitnessMapper.mapBase64EncodedStringToUserTrace(fitnessDataString, objectMapper))
                 .flatMap(userFitnessMetadata -> userService.checkIfUserExists(userFitnessMetadata.getUserId())
                         .filter(isExists -> !isExists)
                         .map(count -> userMapper.mapToUser(userFitnessMetadata))
                         .flatMap(userService::saveUser)
                         .thenReturn(userFitnessMetadata))
                 .flatMap(userFitnessMetadataRepository::save);
+    }
+
+    @PingFitTrackerServer
+    @Transactional(readOnly = true, timeout = 30)
+    public Mono<UserFitnessDTO> calculateUserFitness(String userId, LocalDate date) {
+        return userService.checkIfUserExists(userId)
+                .filter(isExists -> isExists)
+                .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")))
+                .flatMap(isExists -> userService.getFitTrackerUser(userId))
+                .flatMap(userResponse -> userFitnessMetadataRepository.calculateUserFitness(userId, userResponse.weight(), date.atStartOfDay(), date.atTime(LocalTime.MAX)));
     }
 }
