@@ -5,6 +5,7 @@ logging:
       web: DEBUG
       data.redis: DEBUG
     org.redisson: DEBUG
+    io.github.resilience4j: DEBUG
 cron:
   expression:
     create-user-metadata-partition: '* * * * * *'

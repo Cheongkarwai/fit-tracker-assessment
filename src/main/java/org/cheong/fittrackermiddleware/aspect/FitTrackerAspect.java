@@ -5,6 +5,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.cheong.fittrackermiddleware.adapter.FitTrackerAdapter;
+import org.cheong.fittrackermiddleware.dto.HealthResponse;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,8 +23,6 @@ public class FitTrackerAspect {
 
     @Around("@annotation(org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer)")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
-
-        log.info("Pinging Fit Tracker Server");
 
         Object result = joinPoint.proceed();
 

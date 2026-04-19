@@ -29,3 +29,32 @@ fit-tracker:
   clientId: ${FIT_TRACKER_CLIENT_ID}
   clientSecret: ${FIT_TRACKER_CLIENT_SECRET}
   version: ${FIT_TRACKER_API_VERSION}
+
+
+resilience4j:
+  retry:
+    instances:
+      fit-tracker-client:
+        max-attempts: 10
+        wait-duration: 3s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 120s
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+  bulkhead:
+    instances:
+      fit-tracker-client:
+        max-concurrent-calls: 10
+        max-wait-duration: 30s
+  circuitbreaker:
+    instances:
+      fit-tracker-client:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        sliding-window-type: COUNT-BASED
+        permitted-number-of-calls-in-half-open-state: 5
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        record-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientRequestException
