@@ -1,7 +1,7 @@
 cron:
   expression:
     create-user-metadata-partition: 0 0 0 1 * *
-    ping-fit-tracker-health: '*/5 * * * * *'
+    ping-fit-tracker-health: '*/30 * * * * *'
 
 server:
   port: 0

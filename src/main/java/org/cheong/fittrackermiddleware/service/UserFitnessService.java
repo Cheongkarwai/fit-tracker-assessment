@@ -1,5 +1,6 @@
 package org.cheong.fittrackermiddleware.service;
 
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.dto.UserFitnessDTO;
 import org.cheong.fittrackermiddleware.exception.UserNotFoundException;
@@ -36,6 +37,7 @@ public class UserFitnessService {
         this.userService = userService;
     }
 
+    @Retry(name = "user-fitness-service", fallbackMethod = "saveUserFitnessRealTimeMetadataFallback")
     @Transactional(timeout = 30)
     public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadata(String base64EncodedStringFitnessData) {
         return Mono.just(base64EncodedStringFitnessData)
@@ -48,6 +50,12 @@ public class UserFitnessService {
                 .flatMap(userFitnessMetadataRepository::save);
     }
 
+    public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadataFallback(String base64EncodedStringFitnessData, Throwable throwable) {
+        log.error("Error occurred while saving user fitness metadata", throwable);
+        return Mono.empty();
+    }
+
+    @Retry(name = "user-fitness-service", fallbackMethod = "calculateUserFitnessFallback")
     @Transactional(readOnly = true, timeout = 30)
     public Mono<UserFitnessDTO> calculateUserFitness(String userId, LocalDate date) {
         return userService.checkIfUserExists(userId)
@@ -55,5 +63,10 @@ public class UserFitnessService {
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")))
                 .flatMap(isExists -> userService.getFitTrackerUser(userId))
                 .flatMap(userResponse -> userFitnessMetadataRepository.calculateUserFitness(userId, userResponse.weight(), date.atStartOfDay(), date.atTime(LocalTime.MAX)));
+    }
+
+    public Mono<UserFitnessDTO> calculateUserFitnessFallback(String userId, LocalDate date, Throwable throwable) {
+        log.error("Error occurred while calculating user fitness", throwable);
+        return Mono.empty();
     }
 }

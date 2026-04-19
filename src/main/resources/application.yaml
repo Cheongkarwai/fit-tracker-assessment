@@ -52,6 +52,14 @@ resilience4j:
         retry-exceptions:
           - org.springframework.web.reactive.function.client.WebClientRequestException
           - io.netty.handler.timeout.ReadTimeoutException
+      user-fitness-service:
+        max-attempts: 10
+        wait-duration: 3s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 120s
+        retry-exceptions:
+          - io.r2dbc.spi.R2dbcTransientResourceException
   bulkhead:
     instances:
       fit-tracker-client:

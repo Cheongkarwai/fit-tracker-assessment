@@ -40,8 +40,14 @@ public class TokenService {
                 .doOnNext(tokenResponse -> log.debug("Get access token={}", tokenResponse.accessToken()));
     }
 
+    @CircuitBreaker(name = "cache-client", fallbackMethod = "evictAccessTokenFallback")
+    @Retry(name = "cache-client", fallbackMethod = "evictAccessTokenFallback")
     public void evictAccessToken(){
         log.debug("Evicting access token");
         Objects.requireNonNull(cacheManager.getCache("access_token")).clear();
+    }
+
+    public void evictAccessTokenFallback(Throwable throwable){
+        log.error("Redis server is unavailable", throwable);
     }
 }
