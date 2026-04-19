@@ -51,6 +51,7 @@ resilience4j:
         exponential-max-wait-duration: 120s
         retry-exceptions:
           - org.springframework.web.reactive.function.client.WebClientRequestException
+          - io.netty.handler.timeout.ReadTimeoutException
   bulkhead:
     instances:
       fit-tracker-client:
@@ -77,3 +78,4 @@ resilience4j:
         failure-rate-threshold: 50
         record-exceptions:
           - org.springframework.web.reactive.function.client.WebClientRequestException
+          - io.netty.handler.timeout.ReadTimeoutException

@@ -1,7 +1,6 @@
 package org.cheong.fittrackermiddleware.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer;
 import org.cheong.fittrackermiddleware.dto.UserFitnessDTO;
 import org.cheong.fittrackermiddleware.exception.UserNotFoundException;
 import org.cheong.fittrackermiddleware.mapper.UserFitnessMapper;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.ObjectMapper;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -48,7 +48,6 @@ public class UserFitnessService {
                 .flatMap(userFitnessMetadataRepository::save);
     }
 
-    @PingFitTrackerServer
     @Transactional(readOnly = true, timeout = 30)
     public Mono<UserFitnessDTO> calculateUserFitness(String userId, LocalDate date) {
         return userService.checkIfUserExists(userId)

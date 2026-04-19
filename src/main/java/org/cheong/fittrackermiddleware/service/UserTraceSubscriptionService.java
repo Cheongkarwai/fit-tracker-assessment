@@ -1,9 +1,10 @@
 package org.cheong.fittrackermiddleware.service;
 
-import jakarta.annotation.PostConstruct;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakeException;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.adapter.FitTrackerWebSocketAdapter;
-import org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer;
 import org.redisson.api.RLockReactive;
 import org.redisson.api.RedissonReactiveClient;
 import org.springframework.context.annotation.DependsOn;
@@ -11,6 +12,10 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.PrematureCloseException;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -29,10 +34,9 @@ public class UserTraceSubscriptionService {
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
-    @PingFitTrackerServer
     public Mono<Void> startSubscription() {
         RLockReactive rLock = redissonReactiveClient.getLock("fit-tracker-subscription-lock");
-        return rLock.tryLock()
+        return rLock.tryLock(10, TimeUnit.SECONDS)
                 .filter(acquired -> acquired)
                 .doOnNext(acquired -> log.info("Acquired lock"))
                 .doOnNext(trace -> log.info("Start subscription"))
@@ -41,11 +45,10 @@ public class UserTraceSubscriptionService {
                         .flatMap(userFitnessService::saveUserFitnessRealTimeMetadata)
                         .doOnNext(trace -> log.info("Saved user fitness metadata={}", trace))
                         .then())
-                .onErrorResume(err -> {
-                    log.error("Error occurred while subscribing to user fitness metadata", err);
-                    return rLock.unlock();
-                })
-                .doOnTerminate(rLock::unlock);
+                .onErrorResume(WebSocketServerHandshakeException.class, err -> rLock.unlock())
+                .onErrorResume(WebSocketClientHandshakeException.class, err -> rLock.unlock())
+                .onErrorResume(WebSocketHandshakeException.class, err -> rLock.unlock())
+                .onErrorResume((PrematureCloseException.class), err -> rLock.unlock());
     }
 
     @EventListener(ContextClosedEvent.class)

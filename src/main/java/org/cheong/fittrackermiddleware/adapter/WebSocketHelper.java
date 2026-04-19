@@ -22,7 +22,7 @@ public class WebSocketHelper {
 
     private final TokenService tokenService;
 
-    protected WebSocketHelper(WebSocketClient webSocketClient,
+    public WebSocketHelper(WebSocketClient webSocketClient,
                               TokenService tokenService) {
         this.webSocketClient = webSocketClient;
         this.tokenService = tokenService;
