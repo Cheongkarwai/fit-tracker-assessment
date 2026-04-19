@@ -30,6 +30,7 @@
 Table Schema
 
 ``users(id)`` - Extensible for future
+
 ``user_fitness_metadata(user_id, steps, heart_beat, met, created_at)``
 
 
