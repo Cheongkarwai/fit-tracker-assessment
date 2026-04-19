@@ -45,8 +45,7 @@ public class FitTrackerServerHeartbeatScheduler {
                     return fitTrackerAdapter.pingHealth()
                             .filter(HealthResponse::isUp)
                             .flatMap(healthResponse -> userTraceSubscriptionService.startSubscription())
-                            .doOnError(err -> log.error("No heartbeat from Fit Tracker Server. {}", err.getMessage()))
-                            .onErrorResume(FitTrackerServerUnavailable.class, err -> userTraceSubscriptionService.startSubscription());
+                            .doOnError(err -> log.error("No heartbeat from Fit Tracker Server. {}", err.getMessage()));
                 })
                 .onErrorResume(SchedulingException.class, err -> {
                     log.error("Error occurred in scheduler", err);
