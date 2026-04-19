@@ -16,36 +16,33 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
-public class CreatePartitionScheduler {
+public class CreateTablePartitionScheduler {
 
     private final UserFitnessMetadataRepository userFitnessMetadataRepository;
 
     private final RedissonReactiveClient redissonReactiveClient;
 
-    public CreatePartitionScheduler(UserFitnessMetadataRepository userFitnessMetadataRepository,
-                                    RedissonReactiveClient redissonReactiveClient) {
+    public CreateTablePartitionScheduler(UserFitnessMetadataRepository userFitnessMetadataRepository,
+                                         RedissonReactiveClient redissonReactiveClient) {
         this.userFitnessMetadataRepository = userFitnessMetadataRepository;
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
     @Scheduled(cron = "${cron.expression.create-user-metadata-partition:0 0 0 1 * *}")
-    public void createUserMetadataPartition(){
+    public void createUserMetadataTablePartition(){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
-        LocalDate firstDayOfNextMonth = LocalDate.now().plusMonths(1).withDayOfMonth(1);
         LocalDate firstDayOfCurrentMonth = LocalDate.now().withDayOfMonth(1);
 
         RLockReactive rLockReactive = redissonReactiveClient.getLock("create-user-metadata-partition-lock");
 
         rLockReactive.tryLock(10, TimeUnit.SECONDS)
                 .filter(acquired-> acquired)
-                .doOnNext(acquired-> log.info("Creating user metadata partition for two month: {} {}", formatter.format(firstDayOfCurrentMonth), formatter.format(firstDayOfNextMonth)))
+                .doOnNext(acquired-> log.info("Creating user metadata partition for current month: {}", formatter.format(firstDayOfCurrentMonth)))
                 .flatMap(acquired-> this.userFitnessMetadataRepository.createUserFitnessMetadataTablePartition(formatter.format(firstDayOfCurrentMonth), firstDayOfCurrentMonth, firstDayOfCurrentMonth.plusMonths(1).withDayOfMonth(1)))
-                .then(this.userFitnessMetadataRepository.createUserFitnessMetadataTablePartition(formatter.format(firstDayOfNextMonth), firstDayOfNextMonth, firstDayOfNextMonth.plusMonths(1).withDayOfMonth(1)))
                 .onErrorResume(SchedulingException.class, err -> {
                     log.error("Error occurred in scheduler while creating user metadata partition", err);
                     return rLockReactive.unlock();
                 })
-                .doOnTerminate(rLockReactive::unlock)
                 .subscribe();
     }
 

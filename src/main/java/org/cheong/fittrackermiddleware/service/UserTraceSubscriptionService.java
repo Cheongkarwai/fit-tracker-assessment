@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
-@DependsOn("createPartitionScheduler")
+@DependsOn("createTablePartitionScheduler")
 public class UserTraceSubscriptionService {
 
     private final FitTrackerWebSocketAdapter fitTrackerWebSocketAdapter;
