@@ -3,6 +3,7 @@ spring:
     apiversion:
       use:
         path-segment: 1
+      default: v1
   application:
     name: fit-tracker-middleware
   r2dbc:
