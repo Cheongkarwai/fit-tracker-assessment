@@ -1,10 +1,13 @@
 package org.cheong.fittrackermiddleware.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.adapter.AuthorizedFitTrackerAdapter;
 import org.cheong.fittrackermiddleware.dto.UserResponse;
 import org.cheong.fittrackermiddleware.model.User;
 import org.cheong.fittrackermiddleware.repository.UserRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +30,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @CircuitBreaker(name = "cache-client", fallbackMethod = "checkIfUserExistsFallback")
+    @Retry(name = "cache-client", fallbackMethod = "checkIfUserExistsFallback")
+    @Cacheable(value = "user-exists", key = "#userId")
     public Mono<Boolean> checkIfUserExists(String userId) {
+        return userRepository.existsById(userId);
+    }
+
+    public Mono<Boolean> checkIfUserExistsFallback(String userId, Throwable throwable){
+        log.error("Redis server is unavailable", throwable);
         return userRepository.existsById(userId);
     }
 
