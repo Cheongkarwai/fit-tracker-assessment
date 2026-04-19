@@ -1,5 +1,6 @@
 package org.cheong.fittrackermiddleware.controller;
 
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.dto.UserFitnessDTO;
 import org.cheong.fittrackermiddleware.service.UserFitnessService;
@@ -19,6 +20,7 @@ public class UserFitnessController {
         this.userFitnessService = userFitnessService;
     }
 
+    @RateLimiter(name = "user-fitness-api")
     @GetMapping(value = "/{userId}/fitness", version = "v1")
     public Mono<UserFitnessDTO> getUserFitness(@PathVariable String userId,
                                                @RequestParam LocalDate date) {
