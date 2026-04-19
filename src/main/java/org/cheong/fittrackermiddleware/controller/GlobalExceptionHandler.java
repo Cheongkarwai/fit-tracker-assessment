@@ -1,5 +1,6 @@
 package org.cheong.fittrackermiddleware.controller;
 
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.r2dbc.spi.R2dbcException;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.exception.UserNotFoundException;
@@ -38,6 +39,14 @@ public class GlobalExceptionHandler {
         log.error("Handling server exception", ex);
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(500), "Internal Server Error");
         problemDetail.setTitle("Internal Server Error");
+        return problemDetail;
+    }
+
+    @ExceptionHandler({RequestNotPermitted.class})
+    public ProblemDetail handleRequestNotPermitted(RequestNotPermitted ex) {
+        log.error("Handling 429 error", ex);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(429), "Too Many Requests");
+        problemDetail.setTitle("Too Many Requests");
         return problemDetail;
     }
 }
