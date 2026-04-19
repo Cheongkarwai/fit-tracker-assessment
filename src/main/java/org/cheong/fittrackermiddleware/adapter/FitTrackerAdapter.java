@@ -5,6 +5,7 @@ import org.cheong.fittrackermiddleware.dto.HealthResponse;
 import org.cheong.fittrackermiddleware.dto.TokenRequest;
 import org.cheong.fittrackermiddleware.dto.TokenResponse;
 import org.cheong.fittrackermiddleware.exception.ApiException;
+import org.cheong.fittrackermiddleware.exception.FitTrackerServerDown;
 import org.cheong.fittrackermiddleware.properties.FitTrackerProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,9 @@ public class FitTrackerAdapter extends AbstractHttpAdapter {
     }
 
     public Mono<HealthResponse> pingHealth() {
-        return get("/api/health", null, HealthResponse.class, null);
+        return get("/api/health", null, HealthResponse.class, null)
+                .filter(HealthResponse::isUp)
+                .switchIfEmpty(Mono.error(new FitTrackerServerDown("Fit Tracker server is down")));
     }
 
     public Mono<TokenResponse> getToken() {

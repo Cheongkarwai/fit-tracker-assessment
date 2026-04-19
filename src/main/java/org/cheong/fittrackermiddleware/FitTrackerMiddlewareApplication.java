@@ -5,6 +5,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @SpringBootApplication
 public class FitTrackerMiddlewareApplication implements ApplicationRunner {
@@ -21,6 +23,8 @@ public class FitTrackerMiddlewareApplication implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        userTraceSubscriptionService.startSubscription();
+        Mono.defer(userTraceSubscriptionService::startSubscription)
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 }

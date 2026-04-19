@@ -1,4 +1,8 @@
 spring:
+  webflux:
+    apiversion:
+      use:
+        path-segment: 1
   application:
     name: fit-tracker-middleware
   r2dbc:
@@ -24,5 +28,3 @@ fit-tracker:
   clientId: ${FIT_TRACKER_CLIENT_ID}
   clientSecret: ${FIT_TRACKER_CLIENT_SECRET}
   version: ${FIT_TRACKER_API_VERSION}
-server:
-  port: 0

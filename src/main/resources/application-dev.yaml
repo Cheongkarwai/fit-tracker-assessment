@@ -1,5 +1,13 @@
 logging:
   level:
     org.cheong.fittrackermiddleware: DEBUG
-    org.springframework.data.redis: DEBUG
+    org.springframework:
+        web: DEBUG
+        data.redis: DEBUG
     org.redisson: DEBUG
+cron:
+  expression:
+    create-user-metadata-partition: '* * * * * *'
+
+server:
+  port: 8080

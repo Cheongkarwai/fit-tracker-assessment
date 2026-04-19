@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.ApiVersionInserter;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableConfigurationProperties(FitTrackerProperties.class)
+@EnableScheduling
 @Slf4j
 public class WebConfiguration {
 
