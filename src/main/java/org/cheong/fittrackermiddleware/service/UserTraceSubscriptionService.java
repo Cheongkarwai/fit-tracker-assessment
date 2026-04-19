@@ -1,9 +1,7 @@
 package org.cheong.fittrackermiddleware.service;
 
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.cheong.fittrackermiddleware.adapter.FitTrackerWebSocketAdapter;
-import org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer;
 import org.redisson.api.RLockReactive;
 import org.redisson.api.RedissonReactiveClient;
 import org.springframework.context.annotation.DependsOn;
@@ -11,6 +9,9 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -20,6 +21,7 @@ public class UserTraceSubscriptionService {
     private final FitTrackerWebSocketAdapter fitTrackerWebSocketAdapter;
     private final UserFitnessService userFitnessService;
     private final RedissonReactiveClient redissonReactiveClient;
+    private final AtomicBoolean isSubscribed = new AtomicBoolean(false);
 
     public UserTraceSubscriptionService(FitTrackerWebSocketAdapter fitTrackerWebSocketAdapter,
                                         UserFitnessService userFitnessService,
@@ -29,23 +31,30 @@ public class UserTraceSubscriptionService {
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
-    @PingFitTrackerServer
     public Mono<Void> startSubscription() {
+        if (isSubscribed.get()) {
+            log.info("Subscription already started");
+            return Mono.empty();
+        }
+
         RLockReactive rLock = redissonReactiveClient.getLock("fit-tracker-subscription-lock");
-        return rLock.tryLock()
+        return rLock.tryLock(10, TimeUnit.SECONDS)
                 .filter(acquired -> acquired)
-                .doOnNext(acquired -> log.info("Acquired lock"))
-                .doOnNext(trace -> log.info("Start subscription"))
-                .flatMap(acquired -> fitTrackerWebSocketAdapter
-                        .getTraces()
-                        .flatMap(userFitnessService::saveUserFitnessRealTimeMetadata)
-                        .doOnNext(trace -> log.info("Saved user fitness metadata={}", trace))
-                        .then())
-                .onErrorResume(err -> {
-                    log.error("Error occurred while subscribing to user fitness metadata", err);
-                    return rLock.unlock();
+                .doOnNext(acquired -> log.info("Subscription lock acquired={}", acquired))
+                .flatMap(acquired -> {
+                    if (isSubscribed.compareAndSet(false,true)) {
+                        return fitTrackerWebSocketAdapter
+                                .getTraces()
+                                .flatMap(userFitnessService::saveUserFitnessRealTimeMetadata)
+                                .doOnNext(trace -> log.info("Saved user fitness metadata={}", trace))
+                                .then();
+                    }
+                    return Mono.empty();
                 })
-                .doOnTerminate(rLock::unlock);
+                .onErrorResume(err -> {
+                    isSubscribed.set(false);
+                    return rLock.unlock();
+                });
     }
 
     @EventListener(ContextClosedEvent.class)

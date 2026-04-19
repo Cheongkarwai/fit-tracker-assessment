@@ -16,7 +16,7 @@ public class RetryUtil {
      * @return
      */
     public static Retry retryOnUnauthorized(TokenService tokenService) {
-        return Retry.backoff(100, Duration.ofMinutes(1))
+        return Retry.backoff(10, Duration.ofMinutes(1))
                 .filter(throwable -> throwable instanceof WebSocketClientHandshakeException ws
                         && ws.getMessage().contains(String.valueOf(HttpStatus.UNAUTHORIZED.value())))
                 .doBeforeRetry(retrySignal -> {

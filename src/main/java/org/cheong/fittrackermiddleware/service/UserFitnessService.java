@@ -1,7 +1,7 @@
 package org.cheong.fittrackermiddleware.service;
 
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
-import org.cheong.fittrackermiddleware.aspect.PingFitTrackerServer;
 import org.cheong.fittrackermiddleware.dto.UserFitnessDTO;
 import org.cheong.fittrackermiddleware.exception.UserNotFoundException;
 import org.cheong.fittrackermiddleware.mapper.UserFitnessMapper;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import tools.jackson.databind.ObjectMapper;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -36,6 +37,7 @@ public class UserFitnessService {
         this.userService = userService;
     }
 
+    @Retry(name = "user-fitness-service", fallbackMethod = "saveUserFitnessRealTimeMetadataFallback")
     @Transactional(timeout = 30)
     public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadata(String base64EncodedStringFitnessData) {
         return Mono.just(base64EncodedStringFitnessData)
@@ -48,7 +50,12 @@ public class UserFitnessService {
                 .flatMap(userFitnessMetadataRepository::save);
     }
 
-    @PingFitTrackerServer
+    public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadataFallback(String base64EncodedStringFitnessData, Throwable throwable) {
+        log.error("Error occurred while saving user fitness metadata", throwable);
+        return Mono.empty();
+    }
+
+    @Retry(name = "user-fitness-service", fallbackMethod = "calculateUserFitnessFallback")
     @Transactional(readOnly = true, timeout = 30)
     public Mono<UserFitnessDTO> calculateUserFitness(String userId, LocalDate date) {
         return userService.checkIfUserExists(userId)
@@ -56,5 +63,10 @@ public class UserFitnessService {
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")))
                 .flatMap(isExists -> userService.getFitTrackerUser(userId))
                 .flatMap(userResponse -> userFitnessMetadataRepository.calculateUserFitness(userId, userResponse.weight(), date.atStartOfDay(), date.atTime(LocalTime.MAX)));
+    }
+
+    public Mono<UserFitnessDTO> calculateUserFitnessFallback(String userId, LocalDate date, Throwable throwable) {
+        log.error("Error occurred while calculating user fitness", throwable);
+        return Mono.empty();
     }
 }

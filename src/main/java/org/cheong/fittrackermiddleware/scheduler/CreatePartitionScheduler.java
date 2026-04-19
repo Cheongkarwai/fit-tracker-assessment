@@ -6,11 +6,13 @@ import org.redisson.api.RLockReactive;
 import org.redisson.api.RedissonReactiveClient;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.SchedulingException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -34,13 +36,13 @@ public class CreatePartitionScheduler {
 
         RLockReactive rLockReactive = redissonReactiveClient.getLock("create-user-metadata-partition-lock");
 
-        rLockReactive.tryLock()
+        rLockReactive.tryLock(10, TimeUnit.SECONDS)
                 .filter(acquired-> acquired)
                 .doOnNext(acquired-> log.info("Creating user metadata partition for two month: {} {}", formatter.format(firstDayOfCurrentMonth), formatter.format(firstDayOfNextMonth)))
                 .flatMap(acquired-> this.userFitnessMetadataRepository.createUserFitnessMetadataTablePartition(formatter.format(firstDayOfCurrentMonth), firstDayOfCurrentMonth, firstDayOfCurrentMonth.plusMonths(1).withDayOfMonth(1)))
                 .then(this.userFitnessMetadataRepository.createUserFitnessMetadataTablePartition(formatter.format(firstDayOfNextMonth), firstDayOfNextMonth, firstDayOfNextMonth.plusMonths(1).withDayOfMonth(1)))
-                .onErrorResume(err -> {
-                    log.error("Error occurred while creating user metadata partition", err);
+                .onErrorResume(SchedulingException.class, err -> {
+                    log.error("Error occurred in scheduler while creating user metadata partition", err);
                     return rLockReactive.unlock();
                 })
                 .doOnTerminate(rLockReactive::unlock)

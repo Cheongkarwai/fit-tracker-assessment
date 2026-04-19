@@ -12,16 +12,11 @@ import org.cheong.fittrackermiddleware.exception.ApiException;
 import org.cheong.fittrackermiddleware.exception.FitTrackerServerUnavailable;
 import org.cheong.fittrackermiddleware.properties.FitTrackerProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.function.Function;
 
 @Component
