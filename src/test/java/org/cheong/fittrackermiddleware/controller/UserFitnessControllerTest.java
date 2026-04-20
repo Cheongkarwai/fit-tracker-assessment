@@ -26,14 +26,6 @@ public class UserFitnessControllerTest {
     @MockitoBean
     private UserFitnessService userFitnessService;
 
-    @MockitoBean
-    private UserTraceSubscriptionService userTraceSubscriptionService;
-
-    @BeforeEach
-    void setUp() {
-        when(userTraceSubscriptionService.startSubscription()).thenReturn(Mono.empty());
-    }
-
     @Test
     void getSpecificUserFitnessOnSpecificDate_return400HttpStatusCode_whenUserFitnessExistsAndRequestParameterDateIsMissing() {
         webTestClient
