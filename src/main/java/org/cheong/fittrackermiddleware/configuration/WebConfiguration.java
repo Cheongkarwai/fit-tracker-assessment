@@ -17,12 +17,23 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author cheong
+ * Configuration for WebClient
+ */
 @Configuration
 @EnableConfigurationProperties(FitTrackerProperties.class)
 @EnableScheduling
 @Slf4j
 public class WebConfiguration {
 
+    /**
+     * Base WebClient Builder
+     * @param properties Filter Tracker Server Properties
+     * @param logRequestFilterFunction Filter for logging request
+     * @param logResponseFilterFunction Filter for logging response
+     * @return WebClient.Builder
+     */
     @Bean
     public WebClient.Builder baseWebClientBuilder(FitTrackerProperties properties,
                                                   @Qualifier("logRequestFilterFunction") ExchangeFilterFunction logRequestFilterFunction,
@@ -38,12 +49,23 @@ public class WebConfiguration {
                 .defaultApiVersion(properties.version());
     }
 
+    /**
+     * Fit Tracker WebClient
+     * @param builder Base WebClient Builder
+     * @return WebClient
+     */
     @Bean
     public WebClient fitTrackerWebClient(WebClient.Builder builder) {
         return builder
                 .build();
     }
 
+    /**
+     * Fit Tracker WebClient with Authorization
+     * @param builder Base WebClient Builder
+     * @param exchangeFilterFunction Filter for adding Authorization Header
+     * @return WebClient
+     */
     @Bean
     public WebClient fitTrackerAuthorizedWebClient(WebClient.Builder builder,
                                                    @Qualifier("accessTokenFilterFunction") ExchangeFilterFunction exchangeFilterFunction) {
@@ -52,6 +74,11 @@ public class WebConfiguration {
                 .build();
     }
 
+    /**
+     * Filter for adding Authorization Header
+     * @param tokenService TokenService
+     * @return ExchangeFilterFunction
+     */
     @Bean
     public ExchangeFilterFunction accessTokenFilterFunction(TokenService tokenService) {
 
@@ -75,6 +102,10 @@ public class WebConfiguration {
         };
     }
 
+    /**
+     * Filter for logging request and response
+     * @return ExchangeFilterFunction
+     */
     @Bean
     public ExchangeFilterFunction logRequestFilterFunction() {
         return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
@@ -85,6 +116,10 @@ public class WebConfiguration {
         });
     }
 
+    /**
+     * Filter for logging request and response
+     * @return ExchangeFilterFunction
+     */
     @Bean
     public ExchangeFilterFunction logResponseFilterFunction() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {

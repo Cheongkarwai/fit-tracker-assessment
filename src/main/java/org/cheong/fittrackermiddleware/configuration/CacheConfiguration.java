@@ -14,10 +14,19 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
+/**
+ * @author cheong
+ * Configuration for cache
+ */
 @Configuration
 @EnableCaching
 public class CacheConfiguration {
 
+    /**
+     * CacheManager for Redis
+     * @param redisConnectionFactory redisConnectionFactory
+     * @return CacheManager
+     */
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         return RedisCacheManager.builder(redisConnectionFactory)
@@ -27,6 +36,10 @@ public class CacheConfiguration {
 
     }
 
+    /**
+     * Cache configuration for access token
+     * @return RedisCacheConfiguration
+     */
     public RedisCacheConfiguration getTokenCacheConfiguration() {
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
@@ -39,6 +52,10 @@ public class CacheConfiguration {
                 );
     }
 
+    /**
+     * Cache configuration for user exists flag
+     * @return RedisCacheConfiguration
+     */
     public RedisCacheConfiguration getUserExistsFlagCacheConfiguration() {
         return  RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofDays(7))

@@ -14,6 +14,10 @@ import java.net.URI;
 
 import static org.cheong.fittrackermiddleware.util.RetryUtil.retryOnUnauthorized;
 
+/**
+ * @author cheong
+ * Helper class for websocket
+ */
 @Slf4j
 @Component
 public class WebSocketHelper {
@@ -28,6 +32,11 @@ public class WebSocketHelper {
         this.tokenService = tokenService;
     }
 
+    /**
+     * Receive data from websocket
+     * @param path path for websocket
+     * @return Flux<String>
+     */
     public final Flux<String> receive(URI path) {
         Sinks.Many<String> sinks = Sinks.many().multicast().onBackpressureBuffer();
 

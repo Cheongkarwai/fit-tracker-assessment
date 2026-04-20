@@ -17,14 +17,27 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * @author cheong
+ * Adapter for authorized endpoint Fit Tracker server
+ */
 @Slf4j
 @Component
 public class AuthorizedFitTrackerAdapter extends AbstractHttpAdapter {
 
+    /**
+     * Constructor for AuthorizedFitTrackerAdapter
+     * @param webClient
+     */
     public AuthorizedFitTrackerAdapter(@Qualifier("fitTrackerAuthorizedWebClient") WebClient webClient) {
         super(webClient, handle4xxError(), handle5xxError());
     }
 
+    /**
+     * Get user information from Fit Tracker server
+     * @param userId Id of the user
+     * @return Mono<UserResponse>
+     */
     @Retry(name = "fit-tracker-client", fallbackMethod = "getUserFallback")
     @Bulkhead(name = "fit-tracker-client", type = Bulkhead.Type.SEMAPHORE, fallbackMethod = "getUserFallback")
     @CircuitBreaker(name = "fit-tracker-client", fallbackMethod = "getUserFallback")
@@ -32,11 +45,21 @@ public class AuthorizedFitTrackerAdapter extends AbstractHttpAdapter {
         return get("/api/users/{userId}", null, UserResponse.class, List.of(userId));
     }
 
+    /**
+     * Fallback method for getUser
+     * @param userId Id of the user
+     * @param throwable exception thrown by getUser
+     * @return Mono<UserResponse>
+     */
     public Mono<UserResponse> getUserFallback(String userId, Throwable throwable) {
         log.error("Retrieving userId={}, Fit Tracker Server is unavailable", userId, throwable);
         return Mono.error(new FitTrackerServerUnavailable("Fit Tracker server is unavailable."));
     }
 
+    /**
+     * Handle 4xx errors
+     * @return Function<ClientResponse, Mono<? extends Throwable>>
+     */
     private static Function<ClientResponse, Mono<? extends Throwable>> handle4xxError() {
         return response -> {
             if (response.statusCode().is4xxClientError()) {
@@ -47,6 +70,10 @@ public class AuthorizedFitTrackerAdapter extends AbstractHttpAdapter {
         };
     }
 
+    /**
+     * Handle 5xx errors
+     * @return Function<ClientResponse, Mono<? extends Throwable>>
+     */
     private static Function<ClientResponse, Mono<? extends Throwable>> handle5xxError() {
         return response -> {
             if (response.statusCode().is5xxServerError()) {

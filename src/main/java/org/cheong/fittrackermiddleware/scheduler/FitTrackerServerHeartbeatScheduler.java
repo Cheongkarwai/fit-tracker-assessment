@@ -14,6 +14,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author cheong
+ * Scheduler for Fit Tracker server heartbeat
+ */
 @Slf4j
 @Component
 public class FitTrackerServerHeartbeatScheduler {
@@ -24,6 +28,12 @@ public class FitTrackerServerHeartbeatScheduler {
 
     private final RedissonReactiveClient redissonReactiveClient;
 
+    /**
+     * Constructor for FitTrackerServerHeartbeatScheduler
+     * @param fitTrackerAdapter Fit Tracker adapter
+     * @param userTraceSubscriptionService User Trace Subscription Service
+     * @param redissonReactiveClient Redisson Reactive Client from Redisson
+     */
     public FitTrackerServerHeartbeatScheduler(FitTrackerAdapter fitTrackerAdapter,
                                               UserTraceSubscriptionService userTraceSubscriptionService,
                                               RedissonReactiveClient redissonReactiveClient) {
@@ -32,6 +42,10 @@ public class FitTrackerServerHeartbeatScheduler {
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
+    /**
+     * Ping Fit Tracker server every 10 seconds or depends on the cron expression.
+     * Ensure that only one instance can acquire the lock to prevent multiple instances from running concurrently.
+     */
     @Scheduled(cron = "${cron.expression.ping-fit-tracker-health:* * * * * *}")
     public void pingFitTrackerServer() {
 
@@ -51,6 +65,9 @@ public class FitTrackerServerHeartbeatScheduler {
                 .subscribe();
     }
 
+    /**
+     * Release the lock when application context is closed
+     */
     @EventListener(ContextClosedEvent.class)
     public void cleanUp() {
         if (redissonReactiveClient.isShutdown()) {

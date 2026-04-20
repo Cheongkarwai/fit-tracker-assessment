@@ -16,6 +16,10 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+/**
+ * @author cheong
+ * Service for user fitness data
+ */
 @Service
 @Slf4j
 public class UserFitnessService {
@@ -26,6 +30,14 @@ public class UserFitnessService {
     private final UserFitnessMetadataRepository userFitnessMetadataRepository;
     private final UserService userService;
 
+    /**
+     * Constructor for UserFitnessService
+     * @param userFitnessMapper UserFitnessMapper
+     * @param userMapper UserMapper
+     * @param objectMapper ObjectMapper
+     * @param userFitnessMetadataRepository UserFitnessMetadataRepository
+     * @param userService UserService
+     */
     public UserFitnessService(UserFitnessMapper userFitnessMapper,
                               UserMapper userMapper,
                               ObjectMapper objectMapper, UserFitnessMetadataRepository userFitnessMetadataRepository,
@@ -37,6 +49,11 @@ public class UserFitnessService {
         this.userService = userService;
     }
 
+    /**
+     * Save user fitness metadata in a transaction
+     * @param base64EncodedStringFitnessData base64 encoded string of user fitness metadata
+     * @return Mono<UserFitnessMetadata>
+     */
     @Retry(name = "user-fitness-service", fallbackMethod = "saveUserFitnessRealTimeMetadataFallback")
     @Transactional(timeout = 30)
     public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadata(String base64EncodedStringFitnessData) {
@@ -50,11 +67,23 @@ public class UserFitnessService {
                 .flatMap(userFitnessMetadataRepository::save);
     }
 
+    /**
+     * Fallback method for saveUserFitnessRealTimeMetadata
+     * @param base64EncodedStringFitnessData base64 encoded string of user fitness metadata
+     * @param throwable Throwable
+     * @return Mono<UserFitnessMetadata>
+     */
     public Mono<UserFitnessMetadata> saveUserFitnessRealTimeMetadataFallback(String base64EncodedStringFitnessData, Throwable throwable) {
         log.error("Error occurred while saving user fitness metadata", throwable);
         return Mono.empty();
     }
 
+    /**
+     * Calculate user fitness data
+     * @param userId identifie of the user
+     * @param date date of the user fitness data
+     * @return Mono<UserFitnessDTO>
+     */
     @Retry(name = "user-fitness-service", fallbackMethod = "calculateUserFitnessFallback")
     @Transactional(readOnly = true, timeout = 30)
     public Mono<UserFitnessDTO> calculateUserFitness(String userId, LocalDate date) {
@@ -65,6 +94,13 @@ public class UserFitnessService {
                 .flatMap(userResponse -> userFitnessMetadataRepository.calculateUserFitness(userId, userResponse.weight(), date.atStartOfDay(), date.atTime(LocalTime.MAX)));
     }
 
+    /**
+     * Fallback method for calculateUserFitness
+     * @param userId identifier of the user
+     * @param date date of the user fitness data
+     * @param throwable Throwable
+     * @return Mono<UserFitnessDTO>
+     */
     public Mono<UserFitnessDTO> calculateUserFitnessFallback(String userId, LocalDate date, Throwable throwable) {
         log.error("Error occurred while calculating user fitness", throwable);
         return Mono.empty();
