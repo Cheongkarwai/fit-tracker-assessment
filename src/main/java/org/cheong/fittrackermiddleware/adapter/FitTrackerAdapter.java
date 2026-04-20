@@ -19,17 +19,30 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
+/**
+ * @author cheong
+ * Adapter for public endpoint Fit Tracker server
+ */
 @Component
 @Slf4j
 public class FitTrackerAdapter extends AbstractHttpAdapter {
 
     private final FitTrackerProperties properties;
 
+    /**
+     * Constructor for FitTrackerAdapter
+     * @param webClient webClient for HTTP request
+     * @param properties properties for Fit Tracker server
+     */
     public FitTrackerAdapter(@Qualifier("fitTrackerWebClient") WebClient webClient, FitTrackerProperties properties) {
         super(webClient, handle4xxError(), handle5xxError());
         this.properties = properties;
     }
 
+    /**
+     * Ping Fit Tracker server to check if server is available
+     * @return Mono<HealthResponse>
+     */
     @Retry(name = "fit-tracker-client", fallbackMethod = "pingFitTrackerServerFallBack")
     @Bulkhead(name = "fit-tracker-client", type = Bulkhead.Type.SEMAPHORE, fallbackMethod = "pingFitTrackerServerFallBack")
     @CircuitBreaker(name = "fit-tracker-client", fallbackMethod = "pingFitTrackerServerFallBack")
@@ -39,11 +52,20 @@ public class FitTrackerAdapter extends AbstractHttpAdapter {
                 .switchIfEmpty(Mono.error(new FitTrackerServerUnavailable("Fit Tracker server is unavailable.")));
     }
 
+    /**
+     * Fallback method for pingFitTrackerServer
+     * @param throwable Throwable thrown by pingFitTrackerServer
+     * @return Mono<HealthResponse>
+     */
     public Mono<HealthResponse> pingFitTrackerServerFallBack(Throwable throwable) {
         log.error("Pinging Fit Tracker Server. Fit Tracker Server is unavailable", throwable);
         return Mono.error(new FitTrackerServerUnavailable("Fit Tracker server is unavailable."));
     }
 
+    /**
+     * Get access token from Fit Tracker server
+     * @return Mono<TokenResponse>
+     */
     @Retry(name = "fit-tracker-client", fallbackMethod = "getTokenFallback")
     @Bulkhead(name = "fit-tracker-client", type = Bulkhead.Type.SEMAPHORE, fallbackMethod = "getTokenFallback")
     @CircuitBreaker(name = "fit-tracker-client", fallbackMethod = "getTokenFallback")
@@ -51,11 +73,20 @@ public class FitTrackerAdapter extends AbstractHttpAdapter {
         return post("/api/token", null, TokenResponse.class, null, new TokenRequest(properties.clientId(), properties.clientSecret()));
     }
 
+    /**
+     * Fallback method for getToken
+     * @param throwable Throwable thrown by getToken
+     * @return Mono<TokenResponse>
+     */
     public Mono<TokenResponse> getTokenFallback(Throwable throwable) {
         log.error("Getting access token. Fit Tracker Server is unavailable", throwable);
         return Mono.error(new FitTrackerServerUnavailable("Fit Tracker server is unavailable."));
     }
 
+    /**
+     * Handle 4xx errors
+     * @return Function<ClientResponse, Mono<? extends Throwable>>
+     */
     private static Function<ClientResponse, Mono<? extends Throwable>> handle4xxError() {
         return response -> {
             if (response.statusCode().is4xxClientError()) {
@@ -66,6 +97,10 @@ public class FitTrackerAdapter extends AbstractHttpAdapter {
         };
     }
 
+    /**
+     * Handle 5xx errors
+     * @return Function<ClientResponse, Mono<? extends Throwable>>
+     */
     private static Function<ClientResponse, Mono<? extends Throwable>> handle5xxError() {
         return response -> {
             if (response.statusCode().is5xxServerError()) {

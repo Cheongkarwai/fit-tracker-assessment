@@ -9,6 +9,10 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 
+/**
+ * @author cheong
+ * Controller for user fitness data
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/{version}/users")
@@ -20,6 +24,12 @@ public class UserFitnessController {
         this.userFitnessService = userFitnessService;
     }
 
+    /**
+     * Get user fitness data for a specific user and date
+     * @param userId User ID
+     * @param date Date
+     * @return UserFitnessDTO
+     */
     @RateLimiter(name = "user-fitness-api")
     @GetMapping(value = "/{userId}/fitness", version = "v1")
     public Mono<UserFitnessDTO> getUserFitness(@PathVariable String userId,

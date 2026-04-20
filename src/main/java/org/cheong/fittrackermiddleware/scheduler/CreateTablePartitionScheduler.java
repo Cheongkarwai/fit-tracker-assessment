@@ -14,6 +14,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author cheong
+ * Scheduler for creating user metadata partition
+ */
 @Slf4j
 @Component
 public class CreateTablePartitionScheduler {
@@ -22,12 +26,21 @@ public class CreateTablePartitionScheduler {
 
     private final RedissonReactiveClient redissonReactiveClient;
 
+    /**
+     * Constructor for CreateTablePartitionScheduler
+     * @param userFitnessMetadataRepository userFitnessMetadataRepository
+     * @param redissonReactiveClient redissonReactiveClient from Redisson
+     */
     public CreateTablePartitionScheduler(UserFitnessMetadataRepository userFitnessMetadataRepository,
                                          RedissonReactiveClient redissonReactiveClient) {
         this.userFitnessMetadataRepository = userFitnessMetadataRepository;
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
+    /**
+     * Create user metadata table partition for current month. Partition name is yyyy_MM_dd
+     * Also ensure that only one instance can acquire the lock to prevent multiple instances from running create table partition concurrently
+     */
     @Scheduled(cron = "${cron.expression.create-user-metadata-partition:0 0 0 1 * *}")
     public void createUserMetadataTablePartition(){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd");
@@ -46,6 +59,9 @@ public class CreateTablePartitionScheduler {
                 .subscribe();
     }
 
+    /**
+     * Release the lock when application context is closed
+     */
     @EventListener(ContextClosedEvent.class)
     public void cleanUp(){
         if(redissonReactiveClient.isShutdown()) {

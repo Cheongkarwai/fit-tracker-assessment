@@ -13,6 +13,10 @@ import reactor.core.publisher.Mono;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @author cheong
+ * Service for user fitness trace subscription
+ */
 @Slf4j
 @Service
 @DependsOn("createTablePartitionScheduler")
@@ -23,6 +27,12 @@ public class UserTraceSubscriptionService {
     private final RedissonReactiveClient redissonReactiveClient;
     private final AtomicBoolean isSubscribed = new AtomicBoolean(false);
 
+    /**
+     * Constructor for UserTraceSubscriptionService
+     * @param fitTrackerWebSocketAdapter fitTrackerWebSocketAdapter
+     * @param userFitnessService userFitnessService
+     * @param redissonReactiveClient redissonReactiveClient
+     */
     public UserTraceSubscriptionService(FitTrackerWebSocketAdapter fitTrackerWebSocketAdapter,
                                         UserFitnessService userFitnessService,
                                         RedissonReactiveClient redissonReactiveClient) {
@@ -31,6 +41,11 @@ public class UserTraceSubscriptionService {
         this.redissonReactiveClient = redissonReactiveClient;
     }
 
+    /**
+     * Start establishing subscription to Fit Tracker server and maintain lock to prevent multiple instances from running concurrently
+     * Also ensure that subscription is only started once by checking isSubscribed AtomicBoolean
+     * @return Mono<Void>
+     */
     public Mono<Void> startSubscription() {
         if (isSubscribed.get()) {
             log.info("Subscription already started");
@@ -57,6 +72,9 @@ public class UserTraceSubscriptionService {
                 });
     }
 
+    /**
+     * Release the lock when application context is closed
+     */
     @EventListener(ContextClosedEvent.class)
     public void cleanUp() {
         if (redissonReactiveClient.isShutdown()) {
