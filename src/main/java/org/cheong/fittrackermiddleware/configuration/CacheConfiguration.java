@@ -7,9 +7,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
@@ -57,7 +60,7 @@ public class CacheConfiguration {
      * @return RedisCacheConfiguration
      */
     public RedisCacheConfiguration getUserExistsFlagCacheConfiguration() {
-        return  RedisCacheConfiguration.defaultCacheConfig()
+        return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofDays(7))
                 .disableCachingNullValues()
                 .serializeKeysWith(
@@ -66,6 +69,18 @@ public class CacheConfiguration {
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(new JacksonJsonRedisSerializer<>(Boolean.class))
                 );
+    }
+
+    @Bean
+    public ReactiveRedisTemplate<String, Boolean> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
+        RedisSerializationContext<String, Boolean> serializationContext =
+                RedisSerializationContext.<String, Boolean>newSerializationContext(RedisSerializer.string())
+                        .value(new JacksonJsonRedisSerializer<>(Boolean.class))
+                        .hashKey(RedisSerializer.string())
+                        .hashValue(RedisSerializer.json())
+                        .build();
+
+        return new ReactiveRedisTemplate<>(factory, serializationContext);
     }
 
 }
