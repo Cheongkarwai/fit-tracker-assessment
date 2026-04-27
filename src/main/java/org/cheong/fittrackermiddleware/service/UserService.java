@@ -7,7 +7,8 @@ import org.cheong.fittrackermiddleware.adapter.AuthorizedFitTrackerAdapter;
 import org.cheong.fittrackermiddleware.dto.UserResponse;
 import org.cheong.fittrackermiddleware.model.User;
 import org.cheong.fittrackermiddleware.repository.UserRepository;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -23,19 +24,15 @@ public class UserService {
 
     private final AuthorizedFitTrackerAdapter authorizedFitTrackerAdapter;
 
-    private final ReactiveRedisTemplate<String, Boolean> userExistsRedisTemplate;
-
     /**
      * Constructor for UserService
      * @param userRepository userRepository
      * @param authorizedFitTrackerAdapter authorizedFitTrackerAdapter
      */
     public UserService(UserRepository userRepository,
-                       AuthorizedFitTrackerAdapter authorizedFitTrackerAdapter,
-                       ReactiveRedisTemplate<String, Boolean> userExistsRedisTemplate){
+                       AuthorizedFitTrackerAdapter authorizedFitTrackerAdapter){
         this.userRepository = userRepository;
         this.authorizedFitTrackerAdapter = authorizedFitTrackerAdapter;
-        this.userExistsRedisTemplate = userExistsRedisTemplate;
     }
 
     /**
@@ -43,6 +40,7 @@ public class UserService {
      * @param user user
      * @return Mono<User>
      */
+    @CacheEvict(cacheNames = "user_exists", key = "#user.id")
     public Mono<User> saveUser(User user) {
         user.setNew(true);
         return userRepository.save(user);
@@ -55,10 +53,9 @@ public class UserService {
      */
     @CircuitBreaker(name = "cache-client", fallbackMethod = "checkIfUserExistsFallback")
     @Retry(name = "cache-client", fallbackMethod = "checkIfUserExistsFallback")
+    @Cacheable(cacheNames = "user_exists", key = "#userId")
     public Mono<Boolean> checkIfUserExists(String userId) {
-        return userExistsRedisTemplate.opsForValue().get(userId)
-                .defaultIfEmpty(false)
-                .flatMap(isExists -> isExists ? Mono.just(true) : userRepository.existsById(userId));
+        return userRepository.existsById(userId);
     }
 
     /**

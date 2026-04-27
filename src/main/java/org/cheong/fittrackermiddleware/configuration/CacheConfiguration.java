@@ -70,17 +70,4 @@ public class CacheConfiguration {
                         RedisSerializationContext.SerializationPair.fromSerializer(new JacksonJsonRedisSerializer<>(Boolean.class))
                 );
     }
-
-    @Bean
-    public ReactiveRedisTemplate<String, Boolean> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
-        RedisSerializationContext<String, Boolean> serializationContext =
-                RedisSerializationContext.<String, Boolean>newSerializationContext(RedisSerializer.string())
-                        .value(new JacksonJsonRedisSerializer<>(Boolean.class))
-                        .hashKey(RedisSerializer.string())
-                        .hashValue(RedisSerializer.json())
-                        .build();
-
-        return new ReactiveRedisTemplate<>(factory, serializationContext);
-    }
-
 }
