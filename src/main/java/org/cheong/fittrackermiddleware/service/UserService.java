@@ -7,6 +7,7 @@ import org.cheong.fittrackermiddleware.adapter.AuthorizedFitTrackerAdapter;
 import org.cheong.fittrackermiddleware.dto.UserResponse;
 import org.cheong.fittrackermiddleware.model.User;
 import org.cheong.fittrackermiddleware.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -39,6 +40,7 @@ public class UserService {
      * @param user user
      * @return Mono<User>
      */
+    @CacheEvict(value = "user-exists", key = "#user.id")
     public Mono<User> saveUser(User user) {
         user.setNew(true);
         return userRepository.save(user);
