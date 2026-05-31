@@ -61,9 +61,9 @@ public class UserFitnessService {
                 .map(fitnessDataString -> userFitnessMapper.mapBase64EncodedStringToUserTrace(fitnessDataString, objectMapper))
                 .flatMap(userFitnessMetadata -> userService.checkIfUserExists(userFitnessMetadata.getUserId())
                         .filter(isExists -> !isExists)
-                        .map(count -> userMapper.mapToUser(userFitnessMetadata))
+                        .map(v -> userMapper.mapToUser(userFitnessMetadata))
                         .flatMap(userService::saveUser)
-                        .thenReturn(userFitnessMetadata))
+                        .then(Mono.just(userFitnessMetadata)))
                 .flatMap(userFitnessMetadataRepository::save);
     }
 
